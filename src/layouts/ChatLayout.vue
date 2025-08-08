@@ -5,6 +5,35 @@
         <q-toolbar-title> Magic Quasar Chat </q-toolbar-title>
 
         <q-space />
+
+        <!-- Connection Status Indicator -->
+        <q-chip
+          :color="getStatusColor(connectionStatus)"
+          text-color="white"
+          :icon="getStatusIcon(connectionStatus)"
+          size="sm"
+          class="connection-status"
+        >
+          {{ getStatusLabel(connectionStatus) }}
+          <q-tooltip v-if="webSocketError" class="text-negative">
+            {{ webSocketError }}
+          </q-tooltip>
+        </q-chip>
+
+        <!-- Reconnect Button (show when disconnected/error) -->
+        <q-btn
+          v-if="!isWebSocketConnected"
+          @click="reconnectionHandler"
+          icon="refresh"
+          flat
+          round
+          dense
+          color="grey-6"
+          size="sm"
+          class="q-ml-sm"
+        >
+          <q-tooltip>Reconnect</q-tooltip>
+        </q-btn>
       </q-toolbar>
     </q-header>
 
@@ -20,7 +49,14 @@
 
         <div v-show="$q.screen.gt.xs || activeContact" class="chat-panel" :class="{ 'full-width': $q.screen.lt.sm }">
           <div v-if="activeContact" class="contact-header">
-            <q-btn v-if="$q.screen.lt.sm && activeContact" flat dense round icon="arrow_back" @click="handleBack" />
+            <q-btn
+              v-if="$q.screen.lt.sm && activeContact"
+              flat
+              dense
+              round
+              icon="arrow_back"
+              @click="backButtonClickHandler"
+            />
             <div class="contact-info">
               <q-avatar color="primary" text-color="white" size="40px">
                 {{ activeContactNameFirstLetter }}
@@ -39,15 +75,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { defineAsyncComponent, computed, onMounted, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useChatStore } from 'src/stores/chat-store'
-import ContactsList from 'src/components/ContactsList.vue'
-import ChatDialog from 'src/components/ChatDialog.vue'
+import { useWebSocketStore } from 'src/stores/websocket-store'
 import getUpppercasedFirstLetter from 'src/utils/get-uppercased-first-letter'
+
+const ContactsList = defineAsyncComponent(() => import('src/components/ContactsList.vue'))
+const ChatDialog = defineAsyncComponent(() => import('src/components/ChatDialog.vue'))
 
 const $q = useQuasar()
 const chatStore = useChatStore()
+const webSocketStore = useWebSocketStore()
 
 const activeContact = computed(() => chatStore.activeContact)
 const activeContactName = computed(() => chatStore.activeContactName)
@@ -55,20 +94,65 @@ const activeContactNameFirstLetter = computed(() =>
   activeContactName.value ? getUpppercasedFirstLetter(activeContactName.value) : ''
 )
 
-const handleBack = () => {
+const connectionStatus = computed(() => webSocketStore.status)
+const isWebSocketConnected = computed(() => webSocketStore.isConnected)
+const webSocketError = computed(() => webSocketStore.lastError)
+
+const backButtonClickHandler = () => {
   chatStore.clearActiveContact()
+}
+
+const reconnectionHandler = () => {
+  webSocketStore.forceReconnect()
+}
+
+// Status display helpers
+const getStatusColor = (status: string): string => {
+  const statusColors: Record<string, string> = {
+    connected: 'positive',
+    connecting: 'warning',
+    reconnecting: 'warning',
+    error: 'negative',
+    default: 'grey'
+  }
+
+  return statusColors[status] || (statusColors.default as string)
+}
+
+const getStatusIcon = (status: string): string => {
+  const statusIcons: Record<string, string> = {
+    connected: 'wifi',
+    connecting: 'sync',
+    reconnecting: 'sync',
+    error: 'wifi_off',
+    default: 'signal_wifi_off'
+  }
+
+  return statusIcons[status] || (statusIcons.default as string)
+}
+
+const getStatusLabel = (status: string): string => {
+  const statusLabels: Record<string, string> = {
+    connected: 'Online',
+    connecting: 'Connecting',
+    reconnecting: 'Reconnecting',
+    error: 'Error',
+    default: 'Offline'
+  }
+
+  return statusLabels[status] || (statusLabels.default as string)
 }
 
 onMounted(() => {
   try {
-    chatStore.connectWebSocket()
+    chatStore.webSocketInitializationHandler()
   } catch {
     console.log('WebSocket not available, will connect when available')
   }
 })
 
 onUnmounted(() => {
-  chatStore.disconnectWebSocket()
+  chatStore.webSocketDisconnectionHandler()
 })
 </script>
 
@@ -129,6 +213,11 @@ onUnmounted(() => {
 
 .demo-btn {
   margin-right: 8px;
+}
+
+.connection-status {
+  font-size: 11px;
+  height: 24px;
 }
 
 /* Equal width columns for medium screens */

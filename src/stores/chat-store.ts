@@ -1,15 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Contact, Message, IncomingMessage } from 'src/types/chat'
+import { useWebSocketStore } from './websocket-store'
+import { WS_PORT } from 'src/constants'
 import generateRandomId from 'src/utils/generate-random-id'
 
 export const useChatStore = defineStore('chat', () => {
-  const WS_PORT = 8181
+  const websocketStore = useWebSocketStore()
 
   const contacts = ref<Contact[]>([])
   const activeContactName = ref<string | null>(null)
   const currentUserName = ref<string>('You')
-  const websocket = ref<WebSocket | null>(null)
+
+  // Message listener cleanup function
+  let unsubscribeFromMessages: (() => void) | null = null
 
   const sortedContacts = computed(() => [...contacts.value].sort((a, b) => b.lastMessageTime - a.lastMessageTime))
   const activeContact = computed(() => contacts.value.find((contact) => contact.name === activeContactName.value))
@@ -48,10 +52,10 @@ export const useChatStore = defineStore('chat', () => {
 
   const receiveMessage = (incomingMessage: IncomingMessage) => {
     // Avoiding errors if an incoming message does not have the expected structure
-    // if (!Object.hasOwn(incomingMessage, 'message')) {
-    //   console.error('Incoming message is not a chat message', incomingMessage)
-    //   return
-    // }
+    if (!Object.hasOwn(incomingMessage, 'message')) {
+      console.error('Incoming message is not a chat message', incomingMessage)
+      return
+    }
 
     const { from, message } = incomingMessage.message
     addOrUpdateContact(from, message, false)
@@ -65,6 +69,7 @@ export const useChatStore = defineStore('chat', () => {
 
   const setActiveContact = (name: string) => {
     activeContactName.value = name
+
     const contact = contacts.value.find((c) => c.name === name)
     if (contact) {
       contact.unreadCount = 0
@@ -75,40 +80,33 @@ export const useChatStore = defineStore('chat', () => {
     activeContactName.value = null
   }
 
-  const connectWebSocket = () => {
-    if (websocket.value) {
-      websocket.value.close()
+  const webSocketInitializationHandler = () => {
+    // Clean up existing listener
+    if (unsubscribeFromMessages) {
+      unsubscribeFromMessages()
     }
 
-    websocket.value = new WebSocket(`ws://localhost:${WS_PORT}`)
-
-    websocket.value.onmessage = (event) => {
-      try {
-        const incomingMessage: IncomingMessage = JSON.parse(event.data)
-        receiveMessage(incomingMessage)
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error)
+    // Set up message listener
+    unsubscribeFromMessages = websocketStore.onMessage((data: IncomingMessage) => {
+      // Handle chat messages
+      if (data.message && data.message.from && data.message.message) {
+        receiveMessage(data)
       }
-    }
+    })
 
-    websocket.value.onopen = () => {
-      console.log('WebSocket connected')
-    }
-
-    websocket.value.onclose = () => {
-      console.log('WebSocket disconnected')
-    }
-
-    websocket.value.onerror = (error) => {
-      console.error('WebSocket error:', error)
-    }
+    // Connect to WebSocket
+    websocketStore.updateConfig({
+      url: `ws://localhost:${WS_PORT}`
+    })
+    websocketStore.connect()
   }
 
-  const disconnectWebSocket = () => {
-    if (websocket.value) {
-      websocket.value.close()
-      websocket.value = null
+  const webSocketDisconnectionHandler = () => {
+    if (unsubscribeFromMessages) {
+      unsubscribeFromMessages()
+      unsubscribeFromMessages = null
     }
+    websocketStore.disconnect()
   }
 
   return {
@@ -121,7 +119,7 @@ export const useChatStore = defineStore('chat', () => {
     sendMessage,
     setActiveContact,
     clearActiveContact,
-    connectWebSocket,
-    disconnectWebSocket
+    webSocketInitializationHandler,
+    webSocketDisconnectionHandler
   }
 })
