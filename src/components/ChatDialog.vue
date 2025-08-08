@@ -27,7 +27,7 @@
 
       <!-- Message Input Area -->
       <div class="message-input-area">
-        <q-form @submit="sendMessage" class="message-form">
+        <q-form @submit.prevent="sendMessage" class="message-form">
           <q-input
             v-model="newMessage"
             outlined
@@ -38,7 +38,16 @@
             @keydown.enter.exact.prevent="sendMessage"
           >
             <template #append>
-              <q-btn round dense flat icon="send" type="submit" :disable="!newMessage.trim()" color="primary" />
+              <q-btn
+                round
+                dense
+                flat
+                icon="send"
+                type="submit"
+                :disable="!newMessage.trim()"
+                color="primary"
+                @click="sendMessage"
+              />
             </template>
           </q-input>
         </q-form>
