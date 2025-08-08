@@ -14,7 +14,7 @@ export const useChatStore = defineStore('chat', () => {
   const sortedContacts = computed(() => [...contacts.value].sort((a, b) => b.lastMessageTime - a.lastMessageTime))
   const activeContact = computed(() => contacts.value.find((contact) => contact.name === activeContactName.value))
 
-  const addOrUpdateContact = (name: string, message: string, isOwn = false): void => {
+  const addOrUpdateContact = (name: string, message: string, isOwn = false) => {
     const existingContact = contacts.value.find((contact) => contact.name === name)
     const timestamp = Date.now()
 
@@ -46,18 +46,24 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  const receiveMessage = (incomingMessage: IncomingMessage): void => {
+  const receiveMessage = (incomingMessage: IncomingMessage) => {
+    // Avoiding errors if an incoming message does not have the expected structure
+    // if (!Object.hasOwn(incomingMessage, 'message')) {
+    //   console.error('Incoming message is not a chat message', incomingMessage)
+    //   return
+    // }
+
     const { from, message } = incomingMessage.message
     addOrUpdateContact(from, message, false)
   }
 
-  const sendMessage = (message: string): void => {
+  const sendMessage = (message: string) => {
     if (activeContactName.value) {
       addOrUpdateContact(activeContactName.value, message, true)
     }
   }
 
-  const setActiveContact = (name: string): void => {
+  const setActiveContact = (name: string) => {
     activeContactName.value = name
     const contact = contacts.value.find((c) => c.name === name)
     if (contact) {
@@ -65,11 +71,11 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  const clearActiveContact = (): void => {
+  const clearActiveContact = () => {
     activeContactName.value = null
   }
 
-  const connectWebSocket = (): void => {
+  const connectWebSocket = () => {
     if (websocket.value) {
       websocket.value.close()
     }
@@ -98,7 +104,7 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  const disconnectWebSocket = (): void => {
+  const disconnectWebSocket = () => {
     if (websocket.value) {
       websocket.value.close()
       websocket.value = null
