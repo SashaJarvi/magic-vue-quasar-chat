@@ -14,7 +14,7 @@
       >
         <q-item-section avatar>
           <q-avatar color="primary" text-color="white" size="40px">
-            {{ contact.name.charAt(0).toUpperCase() }}
+            {{ getUpppercasedFirstLetter(contact.name) }}
           </q-avatar>
         </q-item-section>
 
@@ -53,6 +53,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useChatStore } from 'src/stores/chat-store'
+import getUpppercasedFirstLetter from 'src/utils/get-uppercased-first-letter'
 
 const chatStore = useChatStore()
 

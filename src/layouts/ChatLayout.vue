@@ -26,7 +26,7 @@
                 {{ activeContactNameFirstLetter }}
               </q-avatar>
               <div class="contact-details">
-                <div class="contact-name">{{ activeContact.name }}</div>
+                <div class="contact-name">{{ activeContactName }}</div>
               </div>
             </div>
           </div>
@@ -44,13 +44,15 @@ import { useQuasar } from 'quasar'
 import { useChatStore } from 'src/stores/chat-store'
 import ContactsList from 'src/components/ContactsList.vue'
 import ChatDialog from 'src/components/ChatDialog.vue'
+import getUpppercasedFirstLetter from 'src/utils/get-uppercased-first-letter'
 
 const $q = useQuasar()
 const chatStore = useChatStore()
 
 const activeContact = computed(() => chatStore.activeContact)
+const activeContactName = computed(() => chatStore.activeContactName)
 const activeContactNameFirstLetter = computed(() =>
-  activeContact.value ? activeContact.value.name.charAt(0).toUpperCase() : ''
+  activeContactName.value ? getUpppercasedFirstLetter(activeContactName.value) : ''
 )
 
 const handleBack = () => {
