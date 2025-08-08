@@ -98,9 +98,10 @@ watch(activeContact, async () => {
 
 <style scoped>
 .chat-dialog {
-  height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Important for flex containers with scrollable children */
 }
 
 .no-chat-selected {
@@ -112,10 +113,11 @@ watch(activeContact, async () => {
 }
 
 .chat-content {
-  height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   background: white;
+  min-height: 0; /* Important for flex containers with scrollable children */
 }
 
 .messages-container {
@@ -123,6 +125,7 @@ watch(activeContact, async () => {
   overflow-y: auto;
   padding: 16px;
   background: #f8f9fa;
+  min-height: 0; /* Important for proper scrolling */
 }
 
 .message-wrapper {
@@ -163,6 +166,7 @@ watch(activeContact, async () => {
   padding: 16px;
   border-top: 1px solid #e0e0e0;
   background: white;
+  flex-shrink: 0; /* Prevent the input area from shrinking */
 }
 
 .message-form {
