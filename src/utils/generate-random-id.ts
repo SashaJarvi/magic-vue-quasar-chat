@@ -1,10 +1,20 @@
-const generateRandomId = (length: number = 10): string => {
+const generateUUIDFallback = (): string => {
+  let dt = new Date().getTime()
+  const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (dt + Math.random() * 16) % 16 | 0
+    dt = Math.floor(dt / 16)
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+  })
+  return uuid
+}
+
+const generateRandomId = (): string => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID()
   }
 
   // fallback for environments without crypto.randomUUID
-  return Date.now().toString() + Math.random().toString(36).substring(2, length)
+  return generateUUIDFallback()
 }
 
 export default generateRandomId

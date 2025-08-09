@@ -1,6 +1,16 @@
-# Magic Vue Quasar chat (magic-vue-quasar-chat)
+# Magic Vue Quasar Chat
 
-A Quasar Project
+A modern chat application built with Vue 3, Quasar Framework, and TypeScript.
+
+## Features
+
+- Real-time messaging with WebSocket support
+- Responsive design that works on desktop and mobile
+- Vue 3 Composition API with TypeScript
+- Pinia state management
+- Comprehensive unit testing with Vitest
+- Pre-commit hooks for code quality
+- WhatsApp-like message transitions
 
 ## Install the dependencies
 
@@ -14,6 +24,22 @@ npm install
 
 ```bash
 quasar dev
+```
+
+### Testing
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests with coverage
+npm run test:coverage
 ```
 
 ### Lint the files

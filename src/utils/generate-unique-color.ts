@@ -19,7 +19,9 @@ const HSLtoString = (hsl: HSL) => {
   return `hsl(${hsl[0]}, ${hsl[1]}%, ${hsl[2]}%)`
 }
 
-export const generateUniqueColor = (name: string): string => {
+const generateUniqueColor = (name: string): string => {
   const hsl = generateHSL(name)
   return HSLtoString(hsl)
 }
+
+export default generateUniqueColor

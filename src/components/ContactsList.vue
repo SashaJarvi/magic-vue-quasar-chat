@@ -54,7 +54,7 @@
 import { computed } from 'vue'
 import { useChatStore } from 'src/stores/chat-store'
 import getUpppercasedFirstLetter from 'src/utils/get-uppercased-first-letter'
-import { generateUniqueColor } from 'src/utils/generate-unique-color'
+import generateUniqueColor from 'src/utils/generate-unique-color'
 
 const chatStore = useChatStore()
 
