@@ -10,19 +10,22 @@
     <div v-else class="chat-content">
       <!-- Messages Area -->
       <div ref="messagesContainer" class="messages-container">
-        <div
-          v-for="message in activeContact.messages"
-          :key="message.id"
-          class="message-wrapper"
-          :class="{ 'own-message': message.isOwn }"
-        >
-          <div class="message-bubble" :class="{ 'own-bubble': message.isOwn }">
-            <div class="message-text">{{ message.message }}</div>
-            <div class="message-time">
-              {{ formatMessageTime(message.timestamp) }}
+        <transition-group name="message" tag="div" class="messages-list">
+          <div
+            v-for="message in activeContact.messages"
+            :key="message.id"
+            class="message-wrapper"
+            :class="{ 'own-message': message.isOwn }"
+            :data-timestamp="message.timestamp"
+          >
+            <div class="message-bubble" :class="{ 'own-bubble': message.isOwn }">
+              <div class="message-text">{{ message.message }}</div>
+              <div class="message-time">
+                {{ formatMessageTime(message.timestamp) }}
+              </div>
             </div>
           </div>
-        </div>
+        </transition-group>
       </div>
 
       <!-- Message Input Area -->
@@ -137,9 +140,15 @@ watch(activeContact, async () => {
   min-height: 0; /* Important for proper scrolling */
 }
 
+.messages-list {
+  width: 100%;
+  min-height: 100%;
+}
+
 .message-wrapper {
   display: flex;
   margin-bottom: 12px;
+  will-change: transform, opacity;
 }
 
 .message-wrapper.own-message {
@@ -152,6 +161,11 @@ watch(activeContact, async () => {
   border-radius: 18px;
   background: white;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+}
+
+.message-bubble:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .message-bubble.own-bubble {
@@ -202,5 +216,24 @@ watch(activeContact, async () => {
 
 .messages-container::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+
+.message-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
+.message-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.message-enter-active {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Optional: Add a subtle move transition when messages reposition */
+.message-move {
+  transition: transform 0.2s ease;
 }
 </style>
