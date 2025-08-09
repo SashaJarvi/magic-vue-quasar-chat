@@ -22,6 +22,9 @@
               <div class="message-text">{{ message.message }}</div>
               <div class="message-time">
                 {{ formatMessageTime(message.timestamp) }}
+                <q-tooltip persistent anchor="bottom end" transition-show="scale" transition-hide="scale">
+                  {{ formatMessageTooltip(message.timestamp) }}
+                </q-tooltip>
               </div>
             </div>
           </div>
@@ -72,7 +75,18 @@ const activeContact = computed(() => chatStore.activeContact)
 
 const formatMessageTime = (timestamp: number): string => {
   const date = new Date(timestamp)
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+const formatMessageTooltip = (timestamp: number): string => {
+  const date = new Date(timestamp)
+  const day = date.getDate()
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const month = monthNames[date.getMonth()]
+  const year = date.getFullYear()
+  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+
+  return `${day} ${month} ${year} at ${time}`
 }
 
 const sendMessage = async () => {
