@@ -2,17 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { WS_PORT } from 'src/constants'
 import type { IncomingMessage } from 'src/types/chat'
-
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error'
-
-export interface WebSocketConfig {
-  url: string
-  heartbeatInterval: number
-  heartbeatTimeout: number
-  reconnectInterval: number
-  maxReconnectAttempts: number
-  reconnectDecay: number
-}
+import type { ConnectionStatus, WebSocketConfig } from 'src/types/websocket'
 
 export const useWebSocketStore = defineStore('websocket', () => {
   const connection = ref<WebSocket | null>(null)
@@ -21,14 +11,10 @@ export const useWebSocketStore = defineStore('websocket', () => {
   const reconnectAttempts = ref(0)
   const messageQueue = ref<string[]>([])
 
-  let heartbeatTimer: NodeJS.Timeout | null = null
-  let heartbeatTimeout: NodeJS.Timeout | null = null
   let reconnectTimer: NodeJS.Timeout | null = null
 
   const config = ref<WebSocketConfig>({
     url: `ws://localhost:${WS_PORT}`,
-    heartbeatInterval: 30000,
-    heartbeatTimeout: 10000,
     reconnectInterval: 2000,
     maxReconnectAttempts: 10,
     reconnectDecay: 1.5
@@ -38,60 +24,24 @@ export const useWebSocketStore = defineStore('websocket', () => {
   const messageListeners = ref<Set<(data: IncomingMessage) => void>>(new Set())
   const statusListeners = ref<Set<(status: ConnectionStatus) => void>>(new Set())
 
-  // Computed
   const isConnected = computed(() => status.value === 'connected')
   const canReconnect = computed(() => reconnectAttempts.value < config.value.maxReconnectAttempts)
 
-  // Private methods
-  function clearTimers() {
-    if (heartbeatTimer) {
-      clearInterval(heartbeatTimer)
-      heartbeatTimer = null
-    }
-    if (heartbeatTimeout) {
-      clearTimeout(heartbeatTimeout)
-      heartbeatTimeout = null
-    }
+  const clearTimers = () => {
     if (reconnectTimer) {
       clearTimeout(reconnectTimer)
       reconnectTimer = null
     }
   }
 
-  function setStatus(newStatus: ConnectionStatus) {
+  const setStatus = (newStatus: ConnectionStatus) => {
     if (status.value !== newStatus) {
       status.value = newStatus
       statusListeners.value.forEach((listener) => listener(newStatus))
     }
   }
 
-  function setupHeartbeat() {
-    if (!isConnected.value) return
-
-    heartbeatTimer = setInterval(() => {
-      if (connection.value?.readyState === WebSocket.OPEN) {
-        // Send ping
-        connection.value.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }))
-
-        // Set timeout for pong response
-        heartbeatTimeout = setTimeout(() => {
-          console.warn('Heartbeat timeout - connection may be broken')
-          if (connection.value) {
-            connection.value.close()
-          }
-        }, config.value.heartbeatTimeout)
-      }
-    }, config.value.heartbeatInterval)
-  }
-
-  function handlePong() {
-    if (heartbeatTimeout) {
-      clearTimeout(heartbeatTimeout)
-      heartbeatTimeout = null
-    }
-  }
-
-  function processMessageQueue() {
+  const processMessageQueue = () => {
     if (!isConnected.value || messageQueue.value.length === 0) return
 
     const messages = [...messageQueue.value]
@@ -107,15 +57,14 @@ export const useWebSocketStore = defineStore('websocket', () => {
     })
   }
 
-  function calculateReconnectDelay(): number {
+  const calculateReconnectDelay = (): number => {
     return Math.min(
       config.value.reconnectInterval * Math.pow(config.value.reconnectDecay, reconnectAttempts.value),
       30000 // Max 30 seconds
     )
   }
 
-  // Public methods
-  function connect(url?: string) {
+  const connect = (url?: string) => {
     if (connection.value?.readyState === WebSocket.CONNECTING) {
       return
     }
@@ -137,7 +86,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
         console.log('WebSocket connected')
         setStatus('connected')
         reconnectAttempts.value = 0
-        setupHeartbeat()
         processMessageQueue()
       }
 
@@ -163,12 +111,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
         try {
           const data = JSON.parse(event.data)
 
-          // Handle heartbeat pong
-          if (data.type === 'pong') {
-            handlePong()
-            return
-          }
-
           // Notify listeners
           messageListeners.value.forEach((listener) => listener(data))
         } catch (error) {
@@ -182,7 +124,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     }
   }
 
-  function disconnect() {
+  const disconnect = () => {
     clearTimers()
 
     if (connection.value) {
@@ -213,19 +155,18 @@ export const useWebSocketStore = defineStore('websocket', () => {
     }, delay)
   }
 
-  function send(data: unknown) {
+  const send = (data: unknown) => {
     const message = JSON.stringify(data)
 
     if (isConnected.value && connection.value?.readyState === WebSocket.OPEN) {
       connection.value.send(message)
     } else {
-      // Queue message for later sending
       messageQueue.value.push(message)
       console.log('Message queued (connection not ready):', data)
     }
   }
 
-  function forceReconnect() {
+  const forceReconnect = () => {
     reconnectAttempts.value = 0
     if (connection.value) {
       connection.value.close()
@@ -235,7 +176,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
   }
 
   // Event subscription methods
-  function onMessage(callback: (data: IncomingMessage) => void) {
+  const onMessage = (callback: (data: IncomingMessage) => void) => {
     messageListeners.value.add(callback)
 
     // Return unsubscribe function
@@ -244,7 +185,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     }
   }
 
-  function onStatusChange(callback: (status: ConnectionStatus) => void) {
+  const onStatusChange = (callback: (status: ConnectionStatus) => void) => {
     statusListeners.value.add(callback)
 
     // Return unsubscribe function
@@ -253,12 +194,11 @@ export const useWebSocketStore = defineStore('websocket', () => {
     }
   }
 
-  function updateConfig(newConfig: Partial<WebSocketConfig>) {
+  const updateConfig = (newConfig: Partial<WebSocketConfig>) => {
     config.value = { ...config.value, ...newConfig }
   }
 
-  // Cleanup on store disposal
-  function cleanup() {
+  const cleanup = () => {
     disconnect()
     clearTimers()
     messageListeners.value.clear()
@@ -266,23 +206,18 @@ export const useWebSocketStore = defineStore('websocket', () => {
   }
 
   return {
-    // State
-    status: computed(() => status.value),
+    status,
     isConnected,
-    lastError: computed(() => lastError.value),
-    reconnectAttempts: computed(() => reconnectAttempts.value),
+    lastError,
+    reconnectAttempts,
     queuedMessages: computed(() => messageQueue.value.length),
     canReconnect,
-
-    // Actions
     connect,
     disconnect,
     send,
     forceReconnect,
     updateConfig,
     cleanup,
-
-    // Event subscriptions
     onMessage,
     onStatusChange
   }
