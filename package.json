@@ -58,8 +58,10 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx,vue}": [
       "npm run lint -- --fix",
-      "npm run format",
-      "npm run test"
+      "npm run format"
+    ],
+    "src/**/*.{test,spec}.{js,ts,tsx}": [
+      "npm run test --"
     ],
     "*.{css,scss,html,json,md}": [
       "npm run format"

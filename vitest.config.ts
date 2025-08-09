@@ -47,7 +47,7 @@ export default defineConfig({
     },
 
     // UI configuration
-    ui: true,
+    // ui: true,
 
     // Performance settings
     testTimeout: 10000,
