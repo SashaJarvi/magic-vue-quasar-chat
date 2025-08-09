@@ -71,7 +71,7 @@ const formatTime = (timestamp: number): string => {
   const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
 
   if (diffInHours < 24) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
   } else if (diffInHours < 168) {
     // 7 days
     return date.toLocaleDateString([], { weekday: 'short' })
