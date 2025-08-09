@@ -149,7 +149,7 @@ The application connects to a WebSocket server on `localhost:8181` by default. T
 
 ### Environment Variables
 
-- Development server runs on port `9010` by default
+- Development server runs on port `9009` by default
 - WebSocket server expected on port `8181`
 
 ## 🏗️ Build for Production
